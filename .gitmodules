@@ -1,0 +1,9 @@
+[submodule "IntdashSimulatorSample/Assets/Plugins/intdash-unity"]
+	path = IntdashSimulatorSample/Assets/Plugins/intdash-unity
+	url = git@github.com:aptpod/intdash-unity.git
+[submodule "IntdashControllerSample/Assets/Plugins/intdash-unity"]
+	path = IntdashControllerSample/Assets/Plugins/intdash-unity
+	url = git@github.com:aptpod/intdash-unity.git
+[submodule "IntdashVisualizerSample/Assets/Plugins/intdash-unity"]
+	path = IntdashVisualizerSample/Assets/Plugins/intdash-unity
+	url = git@github.com:aptpod/intdash-unity.git

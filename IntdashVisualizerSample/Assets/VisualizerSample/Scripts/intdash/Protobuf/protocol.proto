@@ -1,0 +1,82 @@
+syntax = "proto3";
+package pb;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+message DataResponseProto {
+  google.protobuf.Timestamp time = 1;
+  string data_type = 2;
+  string data_id = 3;
+  bytes data_payload = 4;
+  string measurement_uuid = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message DomainEventProto {
+  string meas_uuid = 1;
+  google.protobuf.Timestamp occurred_at = 2;
+  oneof EventContent {
+    google.protobuf.Empty measurement_updated = 3;
+  }
+}
+
+message StoreProto {
+  string meas_uuid = 1;
+  uint32 serial_number = 2  [deprecated = true]; // 代わりに `sections` を使用して下さい。sectionsを使用された場合、この属性は無視します。
+  bool meas_end = 3;
+  bool section_end = 4 [deprecated = true]; // 代わりに `sections` を使用して下さい。sectionsを使用された場合、この属性は無視します。
+  google.protobuf.UInt32Value section_total_count = 5 [deprecated = true]; // 代わりに `sections` を使用して下さい。sectionsを使用された場合、この属性は無視します。
+  repeated DataPointProto data_points = 6 [deprecated = true]; // 代わりに `sections` を使用して下さい。sectionsを使用された場合、この属性は無視します。
+  repeated SectionProto sections = 7;
+}
+
+message SectionProto {
+  uint32 serial_number = 1;
+  bool section_end = 2;
+  google.protobuf.UInt32Value section_total_count = 3;
+  repeated DataPointProto data_points = 4;
+}
+
+message DataPointProto {
+  int64 elapsed_time = 1;
+  uint32 channel = 2;
+  uint32 data_type = 3;
+  bytes data_payload = 4;
+}
+
+message StoreDataChunks {
+  string meas_uuid = 1;
+  string sequence_uuid = 2;
+  repeated StoreDataChunk chunks = 3;
+}
+
+message StoreDataChunk {
+  uint32 sequence_number = 1;
+  repeated StoreDataPointGroup data_point_groups = 2;
+}
+
+message StoreDataPointGroup {
+  StoreDataID data_id = 1;                  // データID
+  repeated StoreDataPoint data_points = 2;  // データポイント
+}
+
+message StoreDataPoint {
+  sint64 elapsed_time = 1;  // 経過時間
+  bytes payload = 2;        // ペイロード
+}
+
+message StoreDataID {
+  string name = 1;  // 名称
+  string type = 2;  // 型
+}
+
+message MeasSequenceChunks {
+  repeated MeasSequenceChunk chunks = 1;  // シーケンスチャンク
+}
+
+message MeasSequenceChunk {
+  uint32 sequence_number = 1;                          // シーケンス番号
+  repeated StoreDataPointGroup data_point_groups = 2;  // データポイントグループ
+}
