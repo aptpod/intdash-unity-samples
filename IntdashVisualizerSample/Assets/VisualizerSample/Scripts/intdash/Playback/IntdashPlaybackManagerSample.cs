@@ -476,7 +476,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         }
         // Accesses the MeasDataPointsApi.ListDataPointsAPI.
         Debug.Log($"RequestListDataPoints(name: {name}, start: {sStart}, sEnd: {sEnd}, filter: {filters}, limit: {limit ?? -1}, order: {order ?? ""})");
-        var api = new MeasDataPointsApi(ApiManager.Configuration);
+        var api = new MeasDataPointsApi(ApiManager.HttpClient, ApiManager.Configuration);
         FileParameter fp;
         if (string.IsNullOrEmpty(ApiManager.ProjectUuid))
         {

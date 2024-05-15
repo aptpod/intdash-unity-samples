@@ -20,7 +20,7 @@ intdashと連携したアプリケーションをUnityで開発する際のサ�
 
 - [iSCP Client for C#](https://github.com/aptpod/iscp-cs) (>= v0.11.0)
 - [intdash REST API Client for C#](https://docs.intdash.jp/manual/api-sdk-docs-site/latest/ja/rest/rest-libraries.html) (>= v2.4.0)
-- [intdash SDK for Unity](https://github.com/aptpod/intdash-unity) (>= v1.0.0)
+- [intdash SDK for Unity](https://github.com/aptpod/intdash-unity) (>= v1.1.0)
 
 ## インストール方法
 
