@@ -168,9 +168,17 @@ public class intdash_LocationPlayback : MonoBehaviour
         dataCacher.BaseTime = start;
     }
 
-    private void Playback_OnSeeked(float value, long time)
+    private void Playback_OnSeeked(float value, long time, bool dataUpdated)
     {
         // If the seek position returns to the beginning, etc., the position of the data readout function should also be changed.
-        dataCacher.SeekTo(time);
+        if (dataUpdated)
+        {
+            dataCacher.Clear();
+            dataCacher.BaseTime = playback.StartTimeTicks;
+        }
+        else
+        {
+            dataCacher.SeekTo(time);
+        }
     }
 }

@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class PlaybackVisualizer : MonoBehaviour
 {
-    public string StartEndTimeStringFormat = "yyyy/MM/dd HH:mm:ss";
+    public string StartEndTimeStringFormat = "yyyy/M/d H:m:s";
     public string StartTime = "2000/01/01 00:00:00";
     public string EndTime = "2000/01/01 00:01:00";
 

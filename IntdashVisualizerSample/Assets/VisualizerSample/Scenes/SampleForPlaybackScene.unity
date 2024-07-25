@@ -6157,7 +6157,7 @@ MonoBehaviour:
     ClientId: 
     ClientSecret: 
   ProjectUuid: 
-  APIVersion: 
+  ApiVersion: 
 --- !u!1 &842048649
 GameObject:
   m_ObjectHideFlags: 0
@@ -7186,7 +7186,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9bdb75b3438c9ce478bffe4bd7f6575c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  StartEndTimeStringFormat: yyyy/MM/dd HH:mm:ss
+  StartEndTimeStringFormat: yyyy/M/d H:m:s
   StartTime: 2023/03/27 11:57:51
   EndTime: 2023/03/27 11:59:33
   CurrentTimeStringFormat: HH:mm:ss.fff
@@ -7429,9 +7429,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a99102a6058aed4eb5d2dc4ac2fbd6c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  apiManager: {fileID: 816543704}
   RequestBulkDataDuration: 1800
-  RequestPartialDataDuration: 15
+  RequestPartialDataDuration: 8
+  PreReadingTimeAtSeek: 2
+  PlaybackSpeed: 1
+  _Status: 3
+  LocalDataPath: 
   IsRepeat: 1
+  partialDataRequestedTime: 0
+  partialDataRequestedTimeForSeek: 0
+  isPartialRequesting: 0
+  loadRequestQueue: 
 --- !u!1 &1831011081
 GameObject:
   m_ObjectHideFlags: 0
@@ -7508,6 +7517,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
   m_SortingOrder: 0
