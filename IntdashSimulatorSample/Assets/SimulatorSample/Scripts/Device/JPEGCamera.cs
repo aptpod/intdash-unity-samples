@@ -1,16 +1,19 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 [RequireComponent(typeof(Camera))]
 public class JPEGCamera : MonoBehaviour
 {
+    private static readonly TextureFormat TEXTURE_FORMAT = TextureFormat.RGB24;
+
     public int Width = 1280;
     public int Height = 720;
     private int? _Width, _Height;
     [Range(0, 100)] public int Quality = 50;
-    public float FrameRate = 15f;
-    private float? _FrameRate;
+    public float ScanRate = 15f;
+    private float? _ScanRate;
 
-    private Camera camera_;
+    private Camera targetCamera;
     private Texture2D texture;
     private Rect rect;
 
@@ -29,51 +32,68 @@ public class JPEGCamera : MonoBehaviour
     private float elapsedTime = 0;
     private float targetTime = 0;
 
-    private void Start()
+    private void Awake()
     {
-        this.camera_ = GetComponent<Camera>();
-        this.camera_.enabled = false;
-        ResetTexture();
+        this.targetCamera = GetComponent<Camera>();
+        this.targetCamera.enabled = false;
     }
 
-    public void ResetTexture()
+    private void Start()
     {
-        this.texture = new Texture2D(this.Width, this.Height, TextureFormat.RGB24, false);
-        this.rect = new Rect(0, 0, this.Width, this.Height);
-        this.texture.Apply();
-        this.camera_.targetTexture = new RenderTexture(this.Width, this.Height, 24);
+        CheckParameters();
+    }
+
+    private void CheckParameters()
+    {
+        bool resetElapsedTime = false;
+
+        if (ScanRate != _ScanRate)
+        {
+            _ScanRate = ScanRate;
+            targetTime = 1f / ScanRate;
+            resetElapsedTime = true;
+        }
+
+        if (Width >= 10 && Height >= 10)
+        {
+            if (Width != _Width || Height != _Height)
+            {
+                _Width = Width;
+                _Height = Height;
+                this.texture = new Texture2D(this.Width, this.Height, TEXTURE_FORMAT, false);
+                this.rect = new Rect(0, 0, this.Width, this.Height);
+                this.texture.Apply();
+                this.targetCamera.targetTexture = new RenderTexture(this.Width, this.Height, 24);
+                resetElapsedTime = true;
+            }
+        }
+
+        if (resetElapsedTime)
+        {
+            elapsedTime = 0;
+        }
     }
 
     private void Update()
     {
+        CheckParameters();
+
         if (Width < 10 || Height < 10) return;
-
-        if (Width != _Width || Height != _Height)
+        if (ScanRate <= 0) return;
+        elapsedTime += Time.deltaTime;
+        if (elapsedTime > targetTime)
         {
-            _Width = Width;
-            _Height = Height;
-            ResetTexture();
-        }
+            elapsedTime -= targetTime;
+            targetCamera.Render();
 
-        if (FrameRate != _FrameRate)
-        {
-            _FrameRate = FrameRate;
-            this.targetTime = 1f / FrameRate;
-            this.elapsedTime = 0f;
-        }
-
-        if (this.FrameRate <= 0) return;
-
-        this.elapsedTime += Time.deltaTime;
-
-        if (this.elapsedTime > this.targetTime)
-        {
-            this.elapsedTime -= this.targetTime;
-            this.camera_.Render();
-            RenderTexture.active = this.camera_.targetTexture;
-            this.texture.ReadPixels(this.rect, 0, 0);
-            var data = this.texture.EncodeToJPG(this.Quality);
-            OnOutputData?.Invoke(new OutputData(data));
+            AsyncGPUReadback.Request(targetCamera.activeTexture, 0, TEXTURE_FORMAT, (request) =>
+            {
+                if (request.hasError) return;
+                if (texture == null) return;
+                texture.LoadRawTextureData(request.GetData<uint>());
+                var data = this.texture.EncodeToJPG(this.Quality);
+                OnOutputData?.Invoke(new OutputData(data));
+            });
         }
     }
 }
