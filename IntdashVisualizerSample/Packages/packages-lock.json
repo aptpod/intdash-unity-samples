@@ -109,9 +109,9 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {
+        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.director": "1.0.0",
         "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
       },
       "url": "https://packages.unity.com"
@@ -140,7 +140,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "bf3c9cf9a82d6c36525b17b1208e21e054414c06"
+      "hash": "d1378af3f3a0b0e30d5d918a87d692e1e9c68a37"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

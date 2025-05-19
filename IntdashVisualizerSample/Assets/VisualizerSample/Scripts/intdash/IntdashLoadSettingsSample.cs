@@ -35,6 +35,12 @@ public class IntdashLoadSettingsSample : MonoBehaviour
 
         [RenameInspectorName("Node ID [Edge UUID] ")]
         public JsonParser NodeId;
+
+        [RenameInspectorName("Connection Timeout")]
+        public JsonParser ConnectionTimeout;
+
+        [RenameInspectorName("Send Message Response Timeout")]
+        public JsonParser SendMessageResponseTimeout;
     }
     public List<ConnectionSettings> Connections = new List<ConnectionSettings>();
 
@@ -81,6 +87,16 @@ public class IntdashLoadSettingsSample : MonoBehaviour
         {
             if (c.Connection == null) continue;
             if (c.NodeId.IsEnabled) c.Connection.NodeId = c.NodeId.GetValue<string>();
+            if (c.ConnectionTimeout.IsEnabled)
+            {
+                var timeout = c.ConnectionTimeout.GetValue<int>();
+                c.Connection.ConnectionTimeout = (uint)timeout;
+            }
+            if (c.SendMessageResponseTimeout.IsEnabled)
+            {
+                var timeout = c.SendMessageResponseTimeout.GetValue<int>();
+                c.Connection.SendMessageResponseTimeout = timeout;
+            }
         }
         // Playback Setting
         foreach (var p in Playbacks)
