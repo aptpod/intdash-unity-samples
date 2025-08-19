@@ -59,43 +59,47 @@ public class Iscp_ControlSubscriber : MonoBehaviour
     }
 
     // Received data points events.
-    private void OnReceiveDataPoints(DateTime baseTime, iSCP.Model.DataPointGroup group)
+    private void OnReceiveDataPoints(DateTime baseTime, iSCP.Model.DataPointGroup[] dataPointGroups)
     {
-        Dispatcher.RunOnMainThread(() =>
+        foreach (var group in dataPointGroups)
         {
-            if (this == null) return;
-            if (!this.enabled) return;
-            try
+            foreach (var d in group.DataPoints)
             {
-                foreach (var d in group.DataPoints)
+                Dispatcher.RunOnMainThread(() =>
                 {
-                    receivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
-                    // Extract the necessary data from the data format.
-                    var controlData = System.Text.Encoding.UTF8.GetString(d.Payload);
-                    receivedData = controlData;
-                    // Json Parse
+                    try
                     {
-                        JObject json = JObject.Parse(controlData);
-                        steering = json["steering"].ToObject<float>();
-                        accel = json["accel"].ToObject<float>();
-                        footbrake = json["footbrake"].ToObject<float>();
-                        handbrake = json["handbrake"].ToObject<float>();
-                    }
-                    // Move Vehicles
-                    if (TargetComponent != null)
-                    {
-                        if (TargetComponent.enabled)
+                        if (this == null) return;
+                        if (!this.enabled) return;
+                        receivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
+                        // Extract the necessary data from the data format.
+                        var controlData = System.Text.Encoding.UTF8.GetString(d.Payload);
+                        receivedData = controlData;
+                        // Json Parse
                         {
-                            TargetComponent.Move(steering, accel, footbrake, handbrake);
+                            JObject json = JObject.Parse(controlData);
+                            steering = json["steering"].ToObject<float>();
+                            accel = json["accel"].ToObject<float>();
+                            footbrake = json["footbrake"].ToObject<float>();
+                            handbrake = json["handbrake"].ToObject<float>();
+                        }
+                        // Move Vehicles
+                        if (TargetComponent != null)
+                        {
+                            if (TargetComponent.enabled)
+                            {
+                                TargetComponent.Move(steering, accel, footbrake, handbrake);
+                            }
                         }
                     }
-                }
+                    catch (Exception e)
+                    {
+                        Debug.LogError("Failed to deserialize control message. " + e.Message);
+                    }
+                });
+
             }
-            catch (Exception e)
-            {
-                Debug.LogError("Failed to deserialize control message. " + e.Message);
-            }
-        });
+        }
     }
 
     private void OnEnable() { }

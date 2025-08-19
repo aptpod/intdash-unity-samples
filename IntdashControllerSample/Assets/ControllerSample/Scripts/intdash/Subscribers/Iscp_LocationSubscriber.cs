@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Newtonsoft.Json.Linq;
+using iSCP.Model;
 
 /**
  * Location DataFormat ( string -> JSON )
@@ -49,45 +50,48 @@ public class Iscp_LocationSubscriber : MonoBehaviour
     }
 
     // Received data points events.
-    private void OnReceiveDataPoints(DateTime baseTime, iSCP.Model.DataPointGroup group)
+    private void OnReceiveDataPoints(DateTime baseTime, iSCP.Model.DataPointGroup[] dataPointGroups)
     {
-        Dispatcher.RunOnMainThread(() =>
+        foreach (var group in dataPointGroups)
         {
-            if (this == null) return;
-            if (!this.enabled) return;
-            try
+            foreach (var d in group.DataPoints)
             {
-                foreach (var d in group.DataPoints)
+                Dispatcher.RunOnMainThread(() =>
                 {
-                    ReceivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
-                    // Extract the necessary data from the data format.
-                    var locationData = System.Text.Encoding.UTF8.GetString(d.Payload);
-                    ReceivedData = locationData;
-                    // Json Parse
+                    try
                     {
-                        JObject json = JObject.Parse(locationData);
-                        X = json["x"].ToObject<float>();
-                        Z = json["z"].ToObject<float>();
-                        Head = json["head"].ToObject<float>();
+                        if (this == null) return;
+                        if (!this.enabled) return;
+                        ReceivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
+                        // Extract the necessary data from the data format.
+                        var locationData = System.Text.Encoding.UTF8.GetString(d.Payload);
+                        ReceivedData = locationData;
+                        // Json Parse
+                        {
+                            JObject json = JObject.Parse(locationData);
+                            X = json["x"].ToObject<float>();
+                            Z = json["z"].ToObject<float>();
+                            Head = json["head"].ToObject<float>();
+                        }
+                        // Visualize
+                        if (TargetComponent != null)
+                        {
+                            var pos = TargetComponent.transform.position;
+                            pos.x = X;
+                            pos.z = Z;
+                            TargetComponent.transform.position = pos;
+                            var rot = TargetComponent.transform.eulerAngles;
+                            rot.y = Head;
+                            TargetComponent.transform.eulerAngles = rot;
+                        }
                     }
-                    // Visualize
-                    if (TargetComponent != null)
+                    catch (Exception e)
                     {
-                        var pos = TargetComponent.transform.position;
-                        pos.x = X;
-                        pos.z = Z;
-                        TargetComponent.transform.position = pos;
-                        var rot = TargetComponent.transform.eulerAngles;
-                        rot.y = Head;
-                        TargetComponent.transform.eulerAngles = rot;
+                        Debug.LogError("Failed to deserialize location message. " + e.Message);
                     }
-                }
+                });
             }
-            catch (Exception e)
-            {
-                Debug.LogError("Failed to deserialize location message. " + e.Message);
-            }
-        });
+        }
     }
 
     private void OnEnable() { }

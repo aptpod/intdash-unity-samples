@@ -42,45 +42,49 @@ public class Iscp_JPEGSubscriber : MonoBehaviour, ITexture2D
     }
 
     // Received data points events.
-    private void OnReceiveDataPoints(DateTime baseTime, iSCP.Model.DataPointGroup group)
+    private void OnReceiveDataPoints(DateTime baseTime, iSCP.Model.DataPointGroup[] dataPointGroups)
     {
-        Dispatcher.RunOnMainThread(() =>
+        foreach (var group in dataPointGroups)
         {
-            if (this == null) return;
-            if (!this.enabled) return;
-            try
+            foreach (var d in group.DataPoints)
             {
-                foreach (var d in group.DataPoints)
+                Dispatcher.RunOnMainThread(() =>
                 {
-                    ReceivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
-                    // Extract the necessary data from the data format.
-                    var jpegData = d.Payload;
-                    // Decoding and other transformations may be required for visualization.
-                    if (Texture == null)
+                    if (this == null) return;
+                    if (!this.enabled) return;
+                    try
                     {
-                        Texture = new Texture2D(2, 2);
-                    }
-                    Texture.LoadImage(jpegData);
-                    Texture.Apply(true, false);
-                    // Visualize
-                    if (TargetComponent != null)
-                    {
-                        if (TargetComponent.PreviewTexture == null)
+                        ReceivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
+                        // Extract the necessary data from the data format.
+                        var jpegData = d.Payload;
+                        // Decoding and other transformations may be required for visualization.
+                        if (Texture == null)
                         {
-                            if (TargetComponent.gameObject.activeInHierarchy)
+                            Texture = new Texture2D(2, 2);
+                        }
+                        Texture.LoadImage(jpegData);
+                        Texture.Apply(true, false);
+                        // Visualize
+                        if (TargetComponent != null)
+                        {
+                            if (TargetComponent.PreviewTexture == null)
                             {
-                                TargetComponent.SetPreviewTexture(Texture);
+                                if (TargetComponent.gameObject.activeInHierarchy)
+                                {
+                                    TargetComponent.SetPreviewTexture(Texture);
+                                }
                             }
                         }
                     }
-                    return;
-                }
+                    catch (Exception e)
+                    {
+                        Debug.LogError("Failed to deserialize jpeg message. " + e.Message);
+                    }
+                });
+
             }
-            catch (Exception e)
-            {
-                Debug.LogError("Failed to deserialize jpeg message. " + e.Message);
-            }
-        });
+
+        }
     }
 
     private void OnEnable() { }
