@@ -104,7 +104,14 @@ public class IntdashPlaybackDataCacherSample
 
     public long BaseTime = -1;
     public int Index { private set; get; } = 0;
+    /// <summary>
+    /// The last time you requested.
+    /// </summary>
     public long PrevRequestTime { private set; get; } = 0;
+    /// <summary>
+    /// The time of the last loaded data.
+    /// </summary>
+    public long? LastDataTime { private set; get; } = null;
     /// <summary>
     /// Maximum cache seconds.
     /// Only retained for the specified period of time.
@@ -120,6 +127,7 @@ public class IntdashPlaybackDataCacherSample
         {
             Index = 0;
             PrevRequestTime = 0;
+            LastDataTime = null;
             if (dataList.Count > 0)
             {
                 dataList[0].Index = 0;
@@ -130,7 +138,7 @@ public class IntdashPlaybackDataCacherSample
     {
         if (BaseTime < 0)
             return;
-        var elapsedSeconds = (time - BaseTime) / (10 * 1000 * 1000);
+        var elapsedSeconds = (time - BaseTime).TicksToTotalSeconds();
         if (elapsedSeconds < 0)
         {
             elapsedSeconds = 0;
@@ -169,6 +177,7 @@ public class IntdashPlaybackDataCacherSample
         {
             Index = 0;
             PrevRequestTime = 0;
+            LastDataTime = null;
             BaseTime = -1;
             timeList.Clear();
             dataList.Clear();
@@ -176,7 +185,7 @@ public class IntdashPlaybackDataCacherSample
         }
     }
 
-    public readonly bool IsSigleDataMode = false;
+    public readonly bool IsSigleDataMode = true;
 
     public IntdashPlaybackDataCacherSample(bool singleDataMode = false)
     {
@@ -232,6 +241,7 @@ public class IntdashPlaybackDataCacherSample
                     {
                         timeList.Insert(i, elapsedSeconds);
                         dataList.Insert(i, data);
+                        isInsert = true;
                         break;
                     }
                 }
@@ -420,9 +430,10 @@ public class IntdashPlaybackDataCacherSample
                 {
                     var kv = cache[j];
                     //Debug.Log($"[{i}] cache[{j}] time: {kv.Key} VS {time}, Diff: {(time - kv.Key)}");
-                    if (kv.Key < time)
+                    if (kv.Key <= time)
                     {
                         cache.Index = j + 1;
+                        LastDataTime = kv.Key;
                         foreach (var v in kv.Value)
                         {
                             completion?.Invoke(v.Index, v.Value, kv.Key, v.Options);
