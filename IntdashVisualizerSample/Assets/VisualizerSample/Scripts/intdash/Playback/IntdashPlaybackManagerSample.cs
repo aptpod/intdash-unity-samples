@@ -54,7 +54,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
             Destroy(this);
             return;
         }
-        Debug.Log($"Awake - IntdashPlaybackManager");
+        Debug.Log($"Awake - IntdashPlaybackManagerSample");
         Shared = this;
 
         if (apiManager == null)
@@ -67,7 +67,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
 
     private void OnDestroy()
     {
-        Debug.Log($"OnDestroy - IntdashPlaybackManager");
+        Debug.Log($"OnDestroy - IntdashPlaybackManagerSample");
         if (Shared == this)
             Shared = null;
         ClearRequestId();
@@ -93,7 +93,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
     public event ValueChangedPlaybackStatusListener OnValueChangedPlaybackStatus;
     private void InvokeValueChangedPlaybackStatusEvent(PlaybackStatus status)
     {
-        Debug.Log($"OnValueChangedPlaybackStatus(status: {status}) - IntdashPlaybackManager");
+        Debug.Log($"OnValueChangedPlaybackStatus(status: {status}) - IntdashPlaybackManagerSample");
         Status = status;
         Dispatcher.RunOnMainThread(() =>
         {
@@ -105,7 +105,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
     public event SeekedListener OnSeeked;
     private void InvokeSeekedEvent(float value, long time)
     {
-        Debug.Log($"OnSeeked(value: {value}, time: {time}) - IntdashPlaybackManager");
+        Debug.Log($"OnSeeked(value: {value}, time: {time}) - IntdashPlaybackManagerSample");
         ElapsedTime = Duration * value;
         bool dataUpdated = false;
         if (!(partialDataRequestedTimeForSeek - (RequestPartialDataDurationTicks + PreReadingTimeAtSeekTicks) <= time && time <= partialDataRequestedTimeForSeek))
@@ -114,7 +114,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
             partialDataRequestedTime = time - PreReadingTimeAtSeekTicks;
             if (partialDataRequestedTime < 0) partialDataRequestedTime = 0;
         }
-        CancelPertialRequest();
+        CancelPartialRequest();
         Dispatcher.RunOnMainThread(() =>
         {
             OnSeeked?.Invoke(value, time, dataUpdated);
@@ -134,7 +134,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
     public event SetPlaybackTimeListener OnSetPlaybackTime;
     private void InvokeSetPlaybackTimeEvent(long start, long end)
     {
-        Debug.Log($"OnSetPlaybackTime(start: {start}, end: {end}) - IntdashPlaybackManager");
+        Debug.Log($"OnSetPlaybackTime(start: {start}, end: {end}) - IntdashPlaybackManagerSample");
         OnSetPlaybackTime?.Invoke(start, end);
     }
 
@@ -179,7 +179,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
                 InvokeValueChangedPlaybackStatusEvent(PlaybackStatus.Loading);
             }
         }
-        else if (Status == PlaybackStatus.Loading && LoadRequestQueueCount() == 0)
+        else if (Status == PlaybackStatus.Loading && LoadRequestQueueCount() == 0 && !IsFirstLoading)
         {
             if (CurrentTimeTicks <= partialDataRequestedTime)
             {
@@ -255,6 +255,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         this.partialDataRequestedTimeForSeek = 0;
         this.Status = PlaybackStatus.Stop;
         this.isRequested = false;
+        this.IsFirstLoading = false;
         InvokeSetPlaybackTimeEvent(StartTimeTicks, EndTimeTicks);
         return true;
     }
@@ -320,15 +321,15 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
     private void ClearRequestId()
     {
         bulkRequestId = Guid.Empty;
+        this.isPartialRequesting = false;
         partialRequestId = Guid.Empty;
         this.bulkRequestCancellationTokenSource?.Cancel();
         this.partialRequestCancellationTokenSource?.Cancel();
-        var cancellationTokenSource = new CancellationTokenSource();
-        this.bulkRequestCancellationTokenSource = cancellationTokenSource;
-        this.partialRequestCancellationTokenSource = cancellationTokenSource;
+        this.bulkRequestCancellationTokenSource = new CancellationTokenSource();
+        this.partialRequestCancellationTokenSource = new CancellationTokenSource();
     }
 
-    private void CancelPertialRequest()
+    private void CancelPartialRequest()
     {
         this.isPartialRequesting = false;
         partialRequestId = Guid.Empty;
@@ -378,7 +379,8 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
                         f.Callbacks.Add(d.Callback);
                         break;
                     }
-                };
+                }
+                ;
                 if (!found)
                 {
                     dataList[d.NodeId].Add(new Filter(d.Filter, d.Callback));
@@ -394,6 +396,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         if (bulkPlaybacks.Count == 0 && partialPlaybacks.Count == 0)
         {
             Debug.Log("bulkPlaybacks & partialPlaybacks is Empty.");
+            IsFirstLoading = false;
             InvokeValueChangedPlaybackStatusEvent(PlaybackStatus.Play);
             return;
         }
@@ -413,10 +416,11 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         var firstRequestCompletion = new Action(() =>
         {
             if (bulkReqId != this.bulkRequestId) return;
-            requestCnt -= 1;
-            if (requestCnt <= 0)
+            var current = Interlocked.Decrement(ref requestCnt);
+            if (current <= 0)
             {
                 Debug.Log("End - StartRequestFirstData()");
+                IsFirstLoading = false;
                 InvokeValueChangedPlaybackStatusEvent(PlaybackStatus.Play);
             }
         });
@@ -449,7 +453,6 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
             return;
         }
         var duration = RequestBulkDataDurationTicks;
-        Debug.Log($"RequestBulkDataDurationTicks: {duration}, endTime - time: {endTime - time}, = {endTime - time < duration}, {duration.TicksToTotalSeconds()}");
         if (endTime - time < duration)
         {
             duration = endTime - time;
@@ -602,7 +605,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
 
         if (requestCnt == 0)
         {
-            Debug.Log($"Not found partia requests. start: {start.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ")}, end: {end.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ")}, requestId: {reqId}, isFirst: {isFirst}");
+            Debug.Log($"Not found partial requests. start: {start.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ")}, end: {end.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ")}, requestId: {reqId}, isFirst: {isFirst}");
             completion.Invoke();
         }
     }
@@ -624,11 +627,12 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
             sEnd = end.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFZ");
         }
         // Accesses the MeasDataPointsApi.ListDataPointsAPI.
-        Debug.Log($"RequestListDataPoints(name: {name}, start: {sStart}, end: {sEnd}, filter: [{string.Join(",", filters)}], limit: {limit ?? -1}, order: {order ?? "null"})");
         var api = new MeasDataPointsApi(ApiManager.HttpClient, ApiManager.Configuration);
         FileParameter fp;
+        var time = DateTime.Now;
         if (string.IsNullOrEmpty(ApiManager.ProjectUuid))
         {
+            Debug.Log($"RequestListDataPointsForProtobuf(name: {name}, start: {sStart}, end: {sEnd}, filter: [{string.Join(",", filters)}], limit: {limit ?? -1}, order: {order ?? "null"})");
             fp = await api.ListDataPointsForProtobufAsync(
                 name: name,
                 start: sStart,
@@ -641,6 +645,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         }
         else
         {
+            Debug.Log($"RequestListProjectDataPointsForProtobuf(projectUuid: {ApiManager.ProjectUuid}, name: {name}, start: {sStart}, end: {sEnd}, filter: [{string.Join(",", filters)}], limit: {limit ?? -1}, order: {order ?? "null"})");
             fp = await api.ListProjectDataPointsForProtobufAsync(
                 projectUuid: ApiManager.ProjectUuid,
                 name: name,
@@ -665,13 +670,15 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
                 list.Add(data);
             }
         }
-        Debug.Log($"OnReceiveRequestListDataPoints {list.Count} points, name: {name}, start: {sStart}, end: {sEnd}, filter: [{string.Join(",", filters)}], limit: {limit ?? -1}, order: {order ?? "null"}");
+        Debug.Log($"OnReceiveRequestListDataPoints request time: {(DateTime.Now.Ticks - time.Ticks).TicksToSeconds()}, {list.Count} points, name: {name}, start: {sStart}, end: {sEnd}, filter: [{string.Join(",", filters)}], limit: {limit ?? -1}, order: {order ?? "null"}");
         return list.ToArray();
     }
 
     #endregion
 
     #region Player Controls
+
+    public bool IsFirstLoading { private set; get; } = false;
 
     public bool Play()
     {
@@ -687,6 +694,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         {
             isRequested = true;
             isPartialRequesting = false;
+            IsFirstLoading = true;
             InvokeValueChangedPlaybackStatusEvent(PlaybackStatus.Loading);
             StartRequestFirstData();
         }
@@ -706,6 +714,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
         if (Status == PlaybackStatus.Stop) return;
         ElapsedTime = 0;
         isRequested = false;
+        IsFirstLoading = false;
         ClearRequestId();
         prevStatus = PlaybackStatus.Stop;
         ClearLoadRequestQueue();
@@ -718,7 +727,7 @@ public class IntdashPlaybackManagerSample : MonoBehaviour
     private object loadRequestLock = new object();
     private int LoadRequestQueueCount()
     {
-        lock (loadRequestQueue) return loadRequestQueue.Count;
+        lock (loadRequestLock) return loadRequestQueue.Count;
     }
 
     private void ClearLoadRequestQueue()
