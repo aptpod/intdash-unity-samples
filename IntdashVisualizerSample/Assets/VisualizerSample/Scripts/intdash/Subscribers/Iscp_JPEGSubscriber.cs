@@ -21,6 +21,8 @@ public class Iscp_JPEGSubscriber : MonoBehaviour, ITexture2D
     public ImageParts TargetComponent;
 
     public string ReceivedTime;
+    public string ServerTime;
+    public double Latency;
 
     public Texture2D Texture { set; get; }
 
@@ -54,7 +56,12 @@ public class Iscp_JPEGSubscriber : MonoBehaviour, ITexture2D
                     if (!this.enabled) return;
                     try
                     {
+                        long time = baseTime.AddTicks(d.ElapsedTime).Ticks;
+                        var now = DateTime.UtcNow.ToLocalTime();
                         ReceivedTime = DateTime.UtcNow.ToLocalTime().ToString("HH:mm:ss.ffffff");
+                        var serverTime = new DateTime(time).ToLocalTime();
+                        ServerTime = serverTime.ToString("HH:mm:ss.ffffff");
+                        Latency = (now.Ticks - serverTime.Ticks).TicksToSeconds();
                         // Extract the necessary data from the data format.
                         var jpegData = d.Payload;
                         // Decoding and other transformations may be required for visualization.
