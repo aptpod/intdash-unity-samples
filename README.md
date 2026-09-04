@@ -26,7 +26,7 @@ intdashと連携したアプリケーションをUnityで開発する際のサ�
 
 ```
 cd {YOUR_WORKSPACE}
-git clone git@github.com:aptpod/intdash-unity-samples.git --recursive
+git clone https://github.com/aptpod/intdash-unity-samples.git --recursive
 ```
 
 一部の実装がサブモジュール化されています。 `git clone` する際に `--recursive` オプションを利用するなどしてインストールしてください。
